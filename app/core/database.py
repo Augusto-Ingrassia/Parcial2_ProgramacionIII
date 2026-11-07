@@ -1,5 +1,8 @@
 from collections.abc import AsyncGenerator
 from functools import lru_cache
+from typing import Annotated
+
+from fastapi import Depends
 from sqlalchemy.ext.asyncio import (
     AsyncEngine,
     AsyncSession,
@@ -33,3 +36,6 @@ async def get_session() -> AsyncGenerator[AsyncSession, None]:
     session_factory = get_session_factory()
     async with session_factory() as session:
         yield session
+
+
+SessionDep = Annotated[AsyncSession, Depends(get_session)]

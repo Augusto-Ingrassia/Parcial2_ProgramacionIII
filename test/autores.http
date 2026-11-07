@@ -1,0 +1,77 @@
+### Variable de host base
+@host = http://127.0.0.1:8000
+
+### 1. Alta exitosa
+# Esperado: 201 Created con id, nombre y nacionalidad
+POST {{host}}/autores/
+Content-Type: application/json
+
+{"nombre": "Jorge Luis Borges", "nacionalidad": "Argentina"}
+
+###
+
+### 2. Alta con nombre repetido (ejecutar tras la 1)
+# Esperado: 201 Created con un id distinto (autor no tiene UNIQUE)
+POST {{host}}/autores/
+Content-Type: application/json
+
+{"nombre": "Jorge Luis Borges", "nacionalidad": "Argentina"}
+
+###
+
+### 3. Alta invalida (nacionalidad ausente)
+# Esperado: 422 Unprocessable Entity
+POST {{host}}/autores/
+Content-Type: application/json
+
+{"nombre": "Julio Cortazar"}
+
+###
+
+### 4. Listado por defecto
+# Esperado: 200 OK, arreglo ordenado por id ascendente ([] si no hay datos)
+GET {{host}}/autores/
+
+###
+
+### 5. Paginacion valida
+# Esperado: 200 OK, arreglo con hasta 2 autores desde la posicion 3
+GET {{host}}/autores/?limit=2&offset=2
+
+###
+
+### 6. Paginacion invalida
+# Esperado: 422 Unprocessable Entity
+GET {{host}}/autores/?limit=0
+
+###
+
+### 7. Consulta existente (ajustar id)
+# Esperado: 200 OK con id, nombre y nacionalidad
+GET {{host}}/autores/1
+
+###
+
+### 8. Consulta inexistente
+# Esperado: 404 Not Found con detail propio
+GET {{host}}/autores/999
+
+###
+
+### 9. PATCH parcial
+# Esperado: 200 OK, nacionalidad intacta
+PATCH {{host}}/autores/1
+Content-Type: application/json
+
+{"nombre": "J. L. Borges"}
+
+###
+
+### 10. PATCH inexistente
+# Esperado: 404 Not Found
+PATCH {{host}}/autores/999
+Content-Type: application/json
+
+{"nombre": "X"}
+
+###

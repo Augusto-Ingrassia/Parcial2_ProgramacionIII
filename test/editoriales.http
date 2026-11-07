@@ -1,0 +1,86 @@
+### Variable de host base
+@host = http://127.0.0.1:8000
+
+### 1. Alta exitosa
+# Esperado: 201 Created {"id": <int>, "nombre": "Planeta", "pais": "España"}
+POST {{host}}/editoriales/
+Content-Type: application/json
+
+{"nombre": "Planeta", "pais": "España"}
+
+###
+
+### 2. Alta duplicada (ejecutar tras la 1)
+# Esperado: 409 Conflict {"detail": "Ya existe una editorial con ese nombre"} (sin nombres de restricciones)
+POST {{host}}/editoriales/
+Content-Type: application/json
+
+{"nombre": "Planeta", "pais": "Argentina"}
+
+###
+
+### 3. Alta inválida (pais ausente)
+# Esperado: 422 Unprocessable Entity
+POST {{host}}/editoriales/
+Content-Type: application/json
+
+{"nombre": "Anagrama"}
+
+###
+
+### 4. Listado por defecto (limit=20, offset=0)
+# Esperado: 200 OK, arreglo ordenado por id ascendente ([] si no hay datos)
+GET {{host}}/editoriales/
+
+###
+
+### 5. Paginación válida
+# Esperado: 200 OK, arreglo con hasta 10 editoriales desde la posición 21
+GET {{host}}/editoriales/?limit=10&offset=20
+
+###
+
+### 6. Paginación inválida
+# Esperado: 422 Unprocessable Entity (limit fuera de 1..100)
+GET {{host}}/editoriales/?limit=101
+
+###
+
+### 7. Consulta existente (ajustar id)
+# Esperado: 200 OK con id, nombre y pais
+GET {{host}}/editoriales/1
+
+###
+
+### 8. Consulta inexistente
+# Esperado: 404 Not Found {"detail": "Editorial no encontrada"}
+GET {{host}}/editoriales/999
+
+###
+
+### 9. PATCH parcial
+# Esperado: 200 OK, nombre intacto y pais "Argentina"
+PATCH {{host}}/editoriales/1
+Content-Type: application/json
+
+{"pais": "Argentina"}
+
+###
+
+### 10. PATCH con colisión (crear antes otra editorial "Anagrama" con id 2)
+# Esperado: 409 Conflict; la editorial 2 conserva su nombre
+PATCH {{host}}/editoriales/2
+Content-Type: application/json
+
+{"nombre": "Planeta"}
+
+###
+
+### 11. PATCH inexistente
+# Esperado: 404 Not Found
+PATCH {{host}}/editoriales/999
+Content-Type: application/json
+
+{"pais": "Chile"}
+
+###
