@@ -105,7 +105,7 @@ Paso │ Agente A (Backend Core)       │ Agente B (Backend Aux)        │ Age
 > Los changes C-02 y C-04 pueden implementarse en paralelo por distintos agentes una vez archivado C-01.
 
 ### [C-02] `catalogos-base-editoriales-generos-autores`
-- **Estado**: `[ ]` pendiente
+- **Estado**: `[x]` completado (archivado 2026-11-09)
 - **Scope**: Modelos, DTOs, routers y servicios para entidades maestras independientes
   - Modelos SQLModel con claves foráneas e índices:
     - `Editorial`: tabla `editorial`, `id` (PK autoincremental), `nombre` (`UNIQUE`, NOT NULL), `pais` (NOT NULL).
@@ -132,7 +132,7 @@ Paso │ Agente A (Backend Core)       │ Agente B (Backend Aux)        │ Age
 ---
 
 ### [C-04] `clientes-y-perfiles`
-- **Estado**: `[ ]` pendiente
+- **Estado**: `[x]` completado (archivado 2026-11-09)
 - **Scope**: Entidad Cliente y PerfilCliente con relación 1:1 estricta, validaciones de unicidad e historial de compras
   - Modelos SQLModel relacionales:
     - `Cliente`: tabla `cliente`, `id` (PK autoincremental), `nombre` (NOT NULL), `email` (`UNIQUE`, NOT NULL). Relación 1:1 con `perfil` (`Relationship(back_populates="cliente")`, objeto único, no lista).
@@ -161,7 +161,7 @@ Paso │ Agente A (Backend Core)       │ Agente B (Backend Aux)        │ Age
 ## FASE 2 — Obras y Relaciones N:M
 
 ### [C-03] `libros-y-autorias`
-- **Estado**: `[ ]` pendiente
+- **Estado**: `[x]` completado (archivado 2026-11-09)
 - **Scope**: Modelado de Libro, tabla intermedia LibroAutor N:M con rol y orden, alta directa y consultas sin N+1
   - Modelos SQLModel relacionales:
     - `Libro`: tabla `libro`, `id` (PK autoincremental), `isbn` (`UNIQUE`, NOT NULL), `titulo` (NOT NULL), `precio` (`NUMERIC(10, 2)`, check `precio > 0`), `stock` (int, check `stock >= 0`), `editorial_id` (FK `editorial.id`, `index=True`, NOT NULL), `genero_id` (FK `genero.id`, `index=True`, NULL permitido).
@@ -195,7 +195,7 @@ Paso │ Agente A (Backend Core)       │ Agente B (Backend Aux)        │ Age
 ## FASE 3 — Transaccionalidad y Tareas en Segundo Plano
 
 ### [C-05] `ventas-transaccional-y-background-tasks`
-- **Estado**: `[ ]` pendiente
+- **Estado**: `[x]` completado (archivado 2026-11-09)
 - **Scope**: Composición 1:N Venta/Renglones, inmutabilidad, cálculo en servidor, transaccionalidad atómica y tarea asincrónica de notificación
   - Modelos SQLModel relacionales:
     - `Venta`: tabla `venta`, `id` (PK autoincremental), `cliente_id` (FK `cliente.id`, `index=True`, NOT NULL), `fecha` (`TIMESTAMPTZ` con timezone UTC, NOT NULL), `total` (`NUMERIC(12, 2)`, check `total >= 0`, NOT NULL). Relación `renglones: list[RenglonVenta] = Relationship(back_populates="venta", cascade_delete=True)`.
@@ -231,7 +231,7 @@ Paso │ Agente A (Backend Core)       │ Agente B (Backend Aux)        │ Age
 ## FASE 4 — Calidad, Seed y Auditoría de Rendimiento
 
 ### [C-06] `suite-pruebas-integral-seed-y-auditoria-n1`
-- **Estado**: `[ ]` pendiente
+- **Estado**: `[x]` completado (archivado 2026-11-09)
 - **Scope**: Script de seed reproducible, suite completa de archivos .http y auditoría de consultas fijas sin N+1
   - Script ejecutable de datos iniciales `app/initial_data.py`:
     - Función asincrónica ejecutable vía `python -m app.initial_data` o invocada desde Docker.

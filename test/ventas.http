@@ -1,7 +1,7 @@
 ### Variable de host base
 @host = http://127.0.0.1:8000
 
-# Precondición: base vacía sobre la que ya se ejecutaron test/libros.http y test/clientes.http.
+# Precondición: base vacía (sin seed de app.initial_data) sobre la que ya se ejecutaron test/libros.http y test/clientes.http.
 # Quedan: libro 1 "Los que aman, odian" a 30000.00 (tras su PATCH), libro 2 "Rayuela" a 25000.00,
 # cliente 1 tomas@example.com (con perfil) y cliente 2 ana@example.com.
 
@@ -160,3 +160,13 @@ Content-Type: application/json
 ### 18. Inmutabilidad (RN-08): no hay DELETE
 # Esperado: 405 Method Not Allowed
 DELETE {{host}}/ventas/1
+
+
+###
+
+### 19. Los renglones no se crean por separado (RN-04)
+# Esperado: 404 Not Found (no existe el recurso /renglones/; nacen sólo dentro de la venta)
+POST {{host}}/renglones/
+Content-Type: application/json
+
+{"venta_id": 1, "libro_id": 1, "cantidad": 1}

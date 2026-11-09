@@ -1,0 +1,38 @@
+# Comando: python -m scripts.auditar_consultas --salida evidencia
+# Motor: postgresql (asyncpg)
+# Fecha: 2026-11-09 18:49 UTC
+# SQL_ECHO=true; datos de volumen insertados en una transacción que se revierte.
+
+=== GET /ventas/?limit=1 ===
+SELECT venta.id, venta.cliente_id, venta.fecha, venta.total, cliente_1.id AS id_1, cliente_1.nombre, cliente_1.email 
+FROM venta LEFT OUTER JOIN cliente AS cliente_1 ON cliente_1.id = venta.cliente_id ORDER BY venta.id 
+ LIMIT $1::INTEGER OFFSET $2::INTEGER
+[generated in 0.00023s] (1, 0)
+SELECT renglon_venta.venta_id, renglon_venta.id, renglon_venta.libro_id, renglon_venta.cantidad, renglon_venta.precio_unitario, libro_1.id, libro_1.isbn, libro_1.titulo, libro_1.precio, libro_1.stock, libro_1.editorial_id, libro_1.genero_id 
+FROM renglon_venta LEFT OUTER JOIN libro AS libro_1 ON libro_1.id = renglon_venta.libro_id 
+WHERE renglon_venta.venta_id IN ($1::INTEGER)
+[generated in 0.00056s] (1,)
+--- sentencias: 2 ---
+
+=== GET /ventas/?limit=10 ===
+SELECT venta.id, venta.cliente_id, venta.fecha, venta.total, cliente_1.id AS id_1, cliente_1.nombre, cliente_1.email 
+FROM venta LEFT OUTER JOIN cliente AS cliente_1 ON cliente_1.id = venta.cliente_id ORDER BY venta.id 
+ LIMIT $1::INTEGER OFFSET $2::INTEGER
+[cached since 0.008748s ago] (10, 0)
+SELECT renglon_venta.venta_id, renglon_venta.id, renglon_venta.libro_id, renglon_venta.cantidad, renglon_venta.precio_unitario, libro_1.id, libro_1.isbn, libro_1.titulo, libro_1.precio, libro_1.stock, libro_1.editorial_id, libro_1.genero_id 
+FROM renglon_venta LEFT OUTER JOIN libro AS libro_1 ON libro_1.id = renglon_venta.libro_id 
+WHERE renglon_venta.venta_id IN ($1::INTEGER, $2::INTEGER, $3::INTEGER, $4::INTEGER, $5::INTEGER, $6::INTEGER, $7::INTEGER, $8::INTEGER, $9::INTEGER, $10::INTEGER)
+[cached since 0.00736s ago] (1, 2, 3, 4, 5, 6, 7, 8, 9, 10)
+--- sentencias: 2 ---
+
+=== GET /ventas/?limit=50 ===
+SELECT venta.id, venta.cliente_id, venta.fecha, venta.total, cliente_1.id AS id_1, cliente_1.nombre, cliente_1.email 
+FROM venta LEFT OUTER JOIN cliente AS cliente_1 ON cliente_1.id = venta.cliente_id ORDER BY venta.id 
+ LIMIT $1::INTEGER OFFSET $2::INTEGER
+[cached since 0.01567s ago] (50, 0)
+SELECT renglon_venta.venta_id, renglon_venta.id, renglon_venta.libro_id, renglon_venta.cantidad, renglon_venta.precio_unitario, libro_1.id, libro_1.isbn, libro_1.titulo, libro_1.precio, libro_1.stock, libro_1.editorial_id, libro_1.genero_id 
+FROM renglon_venta LEFT OUTER JOIN libro AS libro_1 ON libro_1.id = renglon_venta.libro_id 
+WHERE renglon_venta.venta_id IN ($1::INTEGER, $2::INTEGER, $3::INTEGER, $4::INTEGER, $5::INTEGER, $6::INTEGER, $7::INTEGER, $8::INTEGER, $9::INTEGER, $10::INTEGER, $11::INTEGER, $12::INTEGER, $13::INTEGER, $14::INTEGER, $15::INTEGER, $16::INTEGER, $17::INTEGER, $18::INTEGER, $19::INTEGER, $20::INTEGER, $21::INTEGER, $22::INTEGER, $23::INTEGER, $24::INTEGER, $25::INTEGER, $26::INTEGER, $27::INTEGER, $28::INTEGER, $29::INTEGER, $30::INTEGER, $31::INTEGER, $32::INTEGER, $33::INTEGER, $34::INTEGER, $35::INTEGER, $36::INTEGER, $37::INTEGER, $38::INTEGER, $39::INTEGER, $40::INTEGER, $41::INTEGER, $42::INTEGER, $43::INTEGER, $44::INTEGER, $45::INTEGER, $46::INTEGER, $47::INTEGER, $48::INTEGER, $49::INTEGER, $50::INTEGER)
+[cached since 0.01456s ago] (1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50)
+--- sentencias: 2 ---
+

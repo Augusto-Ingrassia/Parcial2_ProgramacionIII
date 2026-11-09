@@ -1,8 +1,9 @@
 ### Variable de host base
 @host = http://127.0.0.1:8000
 
-# Precondición: base vacía. Las peticiones 0.x crean el catálogo mínimo:
+# Precondición: base vacía (sin seed de app.initial_data); las peticiones 0.x crean el catálogo mínimo:
 # editorial 1, géneros 1 y 2, autores 1 a 4.
+# RN-12: el detail de los 409 es un mensaje propio, sin nombres de tablas ni restricciones.
 
 ### 0.1 Editorial
 POST {{host}}/editoriales/

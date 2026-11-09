@@ -1,7 +1,8 @@
 ### Variable de host base
 @host = http://127.0.0.1:8000
 
-# Precondición: sin clientes cargados (los ids 1 y 2 los crean las peticiones 1 y 2).
+# Precondición: base vacía (sin seed de app.initial_data); los ids 1 y 2 los crean las peticiones 1 y 2.
+# RN-12: el detail de los 409 es un mensaje propio, sin nombres de tablas ni restricciones.
 
 ### 1. Alta exitosa (el email se guarda en minúsculas)
 # Esperado: 201 Created {"id": 1, "nombre": "Tomás Ríos", "email": "tomas@example.com", "perfil": null}
@@ -123,3 +124,10 @@ PATCH {{host}}/clientes/999
 Content-Type: application/json
 
 {"nombre": "Nadie"}
+
+
+###
+
+### 16. Paginación inválida (RN-10)
+# Esperado: 422 Unprocessable Entity
+GET {{host}}/clientes/?limit=101

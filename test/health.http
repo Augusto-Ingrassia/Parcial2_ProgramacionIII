@@ -1,6 +1,8 @@
 ### Variable de host base
 @host = http://127.0.0.1:8000
 
+# Precondicion: base vacia (sin seed de app.initial_data); el seed cambiaria los ids de estas peticiones.
+
 ### 1. Health Liveness Probe (Verificación de proceso vivo)
 # No consulta la base de datos.
 # Respuesta esperada:

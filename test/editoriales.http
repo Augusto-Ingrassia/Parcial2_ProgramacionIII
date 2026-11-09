@@ -1,6 +1,9 @@
 ### Variable de host base
 @host = http://127.0.0.1:8000
 
+# Precondicion: base vacia (sin seed de app.initial_data); los ids dependen de ello.
+# RN-12: el detail de los 409 es un mensaje propio, sin nombres de tablas ni restricciones.
+
 ### 1. Alta exitosa
 # Esperado: 201 Created {"id": <int>, "nombre": "Planeta", "pais": "España"}
 POST {{host}}/editoriales/
@@ -67,9 +70,18 @@ Content-Type: application/json
 
 ###
 
-### 10. PATCH con colisión (crear antes otra editorial "Anagrama" con id 2)
-# Esperado: 409 Conflict; la editorial 2 conserva su nombre
-PATCH {{host}}/editoriales/2
+### 10.0 Preparación: crear la editorial "Anagrama" (id 3)
+# Esperado: 201 Created con id 3 (la petición 2, rechazada por 409, consume el id 2 de la secuencia de PostgreSQL)
+POST {{host}}/editoriales/
+Content-Type: application/json
+
+{"nombre": "Anagrama", "pais": "España"}
+
+###
+
+### 10. PATCH con colisión (requiere la editorial "Anagrama" con id 3 de la petición 10.0)
+# Esperado: 409 Conflict; la editorial 3 conserva su nombre
+PATCH {{host}}/editoriales/3
 Content-Type: application/json
 
 {"nombre": "Planeta"}

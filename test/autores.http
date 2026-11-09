@@ -1,6 +1,9 @@
 ### Variable de host base
 @host = http://127.0.0.1:8000
 
+# Precondicion: base vacia (sin seed de app.initial_data); los ids dependen de ello.
+# RN-12: el detail de los 409 es un mensaje propio, sin nombres de tablas ni restricciones.
+
 ### 1. Alta exitosa
 # Esperado: 201 Created con id, nombre y nacionalidad
 POST {{host}}/autores/
