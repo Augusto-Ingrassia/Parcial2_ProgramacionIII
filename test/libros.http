@@ -1,0 +1,283 @@
+### Variable de host base
+@host = http://127.0.0.1:8000
+
+# Precondición: base vacía. Las peticiones 0.x crean el catálogo mínimo:
+# editorial 1, géneros 1 y 2, autores 1 a 4.
+
+### 0.1 Editorial
+POST {{host}}/editoriales/
+Content-Type: application/json
+
+{"nombre": "Sudamericana", "pais": "Argentina"}
+
+### 0.2 Géneros
+POST {{host}}/generos/
+Content-Type: application/json
+
+{"nombre": "Novela"}
+
+###
+POST {{host}}/generos/
+Content-Type: application/json
+
+{"nombre": "Cuento"}
+
+### 0.3 Autores
+POST {{host}}/autores/
+Content-Type: application/json
+
+{"nombre": "Julio Cortázar", "nacionalidad": "Argentina"}
+
+###
+POST {{host}}/autores/
+Content-Type: application/json
+
+{"nombre": "Jorge Luis Borges", "nacionalidad": "Argentina"}
+
+###
+POST {{host}}/autores/
+Content-Type: application/json
+
+{"nombre": "Adolfo Bioy Casares", "nacionalidad": "Argentina"}
+
+###
+POST {{host}}/autores/
+Content-Type: application/json
+
+{"nombre": "Silvina Ocampo", "nacionalidad": "Argentina"}
+
+###
+
+### 1. Alta con dos coautores (cuerpo de ejemplo de la consigna)
+# Esperado: 201 Created; detalle con editorial, genero y autores [3 coautor 1, 4 coautor 2]
+POST {{host}}/libros/
+Content-Type: application/json
+
+{
+  "isbn": "978-950-00-0006-6",
+  "titulo": "Los que aman, odian",
+  "precio": "21000.00",
+  "stock": 4,
+  "editorial_id": 1,
+  "genero_id": 1,
+  "autores": [
+    { "autor_id": 3, "rol": "coautor", "orden": 1 },
+    { "autor_id": 4, "rol": "coautor", "orden": 2 }
+  ]
+}
+
+###
+
+### 2. Alta sin género
+# Esperado: 201 Created con "genero": null
+POST {{host}}/libros/
+Content-Type: application/json
+
+{
+  "isbn": "978-950-00-0001-1",
+  "titulo": "Rayuela",
+  "precio": "25000.00",
+  "stock": 10,
+  "editorial_id": 1,
+  "autores": [{ "autor_id": 1, "rol": "autor", "orden": 1 }]
+}
+
+###
+
+### 3. [C-02] ISBN repetido (RN-01)
+# Esperado: 409 Conflict {"detail": "Ya existe un libro con ese ISBN"}
+POST {{host}}/libros/
+Content-Type: application/json
+
+{
+  "isbn": "978-950-00-0001-1",
+  "titulo": "Otro",
+  "precio": "1000.00",
+  "stock": 1,
+  "editorial_id": 1,
+  "autores": [{ "autor_id": 1, "rol": "autor", "orden": 1 }]
+}
+
+###
+
+### 4. [C-04] Editorial inexistente (sin SELECT previo: la FK rechaza)
+# Esperado: 409 Conflict con mensaje propio, sin nombres de tablas ni restricciones
+POST {{host}}/libros/
+Content-Type: application/json
+
+{
+  "isbn": "978-950-00-0099-9",
+  "titulo": "Sin editorial",
+  "precio": "1000.00",
+  "stock": 1,
+  "editorial_id": 999,
+  "autores": [{ "autor_id": 1, "rol": "autor", "orden": 1 }]
+}
+
+###
+
+### 5. [C-04] Autor inexistente
+# Esperado: 409 Conflict con mensaje propio; no se crea el libro
+POST {{host}}/libros/
+Content-Type: application/json
+
+{
+  "isbn": "978-950-00-0098-8",
+  "titulo": "Autor fantasma",
+  "precio": "1000.00",
+  "stock": 1,
+  "editorial_id": 1,
+  "autores": [{ "autor_id": 999, "rol": "autor", "orden": 1 }]
+}
+
+###
+
+### 6. Precio no positivo y rol inválido (RN-03)
+# Esperado: 422 Unprocessable Entity
+POST {{host}}/libros/
+Content-Type: application/json
+
+{
+  "isbn": "978-950-00-0097-7",
+  "titulo": "Inválido",
+  "precio": "0",
+  "stock": -1,
+  "editorial_id": 1,
+  "autores": [{ "autor_id": 1, "rol": "prologuista", "orden": 0 }]
+}
+
+###
+
+### 7. Autor repetido en el mismo libro
+# Esperado: 422 Unprocessable Entity
+POST {{host}}/libros/
+Content-Type: application/json
+
+{
+  "isbn": "978-950-00-0096-6",
+  "titulo": "Repetido",
+  "precio": "1000.00",
+  "stock": 1,
+  "editorial_id": 1,
+  "autores": [
+    { "autor_id": 1, "rol": "autor", "orden": 1 },
+    { "autor_id": 1, "rol": "traductor", "orden": 2 }
+  ]
+}
+
+###
+
+### 8. Listado (con editorial y género)
+# Esperado: 200 OK, ordenado por id
+GET {{host}}/libros/
+
+###
+
+### 9. Búsqueda por parte del título sin distinguir mayúsculas (RN-11)
+# Esperado: 200 OK, sólo "Rayuela"
+GET {{host}}/libros/?titulo=RAYU
+
+###
+
+### 10. [C-08] Intento de inyección SQL en el título
+# Esperado: 200 OK con []
+GET {{host}}/libros/?titulo=' OR '1'='1
+
+###
+
+### 11. Filtro por género y paginación
+# Esperado: 200 OK, sólo libros del género 1
+GET {{host}}/libros/?genero_id=1&limit=10&offset=0
+
+###
+
+### 12. Paginación inválida (RN-10)
+# Esperado: 422 Unprocessable Entity
+GET {{host}}/libros/?limit=0
+
+###
+
+### 13. Detalle (editorial, género y autores en una cantidad fija de consultas)
+# Esperado: 200 OK. Con SQL_ECHO=true: 1 SELECT con JOIN + 1 SELECT ... IN para autorías/autores
+GET {{host}}/libros/1
+
+###
+
+### 14. Detalle inexistente
+# Esperado: 404 Not Found {"detail": "Libro no encontrado"}
+GET {{host}}/libros/999
+
+###
+
+### 15. [C-01] Parámetro de ruta no entero
+# Esperado: 422 Unprocessable Entity, sin ejecutar el handler
+GET {{host}}/libros/abc
+
+###
+
+### 16. PATCH parcial (exclude_unset)
+# Esperado: 200 OK con precio 30000.00 y stock 10; el resto sin cambios
+PATCH {{host}}/libros/1
+Content-Type: application/json
+
+{"precio": "30000.00", "stock": 10}
+
+###
+
+### 17. PATCH que quita el género
+# Esperado: 200 OK con "genero": null
+PATCH {{host}}/libros/1
+Content-Type: application/json
+
+{"genero_id": null}
+
+###
+
+### 18. PATCH con ISBN de otro libro
+# Esperado: 409 Conflict; el libro 1 conserva su ISBN
+PATCH {{host}}/libros/1
+Content-Type: application/json
+
+{"isbn": "978-950-00-0001-1"}
+
+###
+
+### 19. PATCH inválido
+# Esperado: 422 Unprocessable Entity
+PATCH {{host}}/libros/1
+Content-Type: application/json
+
+{"stock": -5}
+
+###
+
+### 20. PATCH inexistente
+# Esperado: 404 Not Found
+PATCH {{host}}/libros/999
+Content-Type: application/json
+
+{"stock": 1}
+
+###
+
+### 21. Libros de una editorial
+# Esperado: 200 OK con los libros de la editorial 1; 404 si no existe
+GET {{host}}/editoriales/1/libros
+
+###
+
+### 22. Libros de un género
+# Esperado: 200 OK; 404 si no existe
+GET {{host}}/generos/2/libros
+
+###
+
+### 23. Libros de un autor con rol y orden
+# Esperado: 200 OK [{"id": 1, ..., "rol": "coautor", "orden": 1}]
+GET {{host}}/autores/3/libros
+
+###
+
+### 24. Autor inexistente
+# Esperado: 404 Not Found
+GET {{host}}/autores/999/libros

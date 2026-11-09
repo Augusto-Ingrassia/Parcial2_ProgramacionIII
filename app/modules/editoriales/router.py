@@ -4,6 +4,8 @@ from app.core.database import SessionDep
 from app.core.pagination import PaginationDep
 from app.modules.editoriales import service
 from app.modules.editoriales.schemas import EditorialCreate, EditorialRead, EditorialUpdate
+from app.modules.libros import service as libros_service
+from app.modules.libros.schemas import LibroRead
 
 router = APIRouter(prefix="/editoriales", tags=["Editoriales"])
 
@@ -26,3 +28,12 @@ async def obtener_editorial(editorial_id: int, session: SessionDep):
 @router.patch("/{editorial_id}", response_model=EditorialRead)
 async def actualizar_editorial(editorial_id: int, payload: EditorialUpdate, session: SessionDep):
     return await service.actualizar_editorial(session, editorial_id, payload)
+
+
+@router.get("/{editorial_id}/libros", response_model=list[LibroRead])
+async def listar_libros_de_editorial(
+    editorial_id: int, session: SessionDep, pagination: PaginationDep
+):
+    return await libros_service.listar_libros_de_editorial(
+        session, editorial_id, pagination.limit, pagination.offset
+    )

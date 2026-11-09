@@ -1,4 +1,9 @@
-from sqlmodel import Field, SQLModel
+from typing import TYPE_CHECKING
+
+from sqlmodel import Field, Relationship, SQLModel
+
+if TYPE_CHECKING:
+    from app.modules.libros.models import Libro
 
 
 class Genero(SQLModel, table=True):
@@ -6,3 +11,7 @@ class Genero(SQLModel, table=True):
 
     id: int | None = Field(default=None, primary_key=True)
     nombre: str = Field(unique=True)
+
+    libros: list["Libro"] = Relationship(
+        back_populates="genero", sa_relationship_kwargs={"lazy": "raise"}
+    )

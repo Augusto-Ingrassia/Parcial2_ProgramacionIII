@@ -1,0 +1,162 @@
+### Variable de host base
+@host = http://127.0.0.1:8000
+
+# Precondición: base vacía sobre la que ya se ejecutaron test/libros.http y test/clientes.http.
+# Quedan: libro 1 "Los que aman, odian" a 30000.00 (tras su PATCH), libro 2 "Rayuela" a 25000.00,
+# cliente 1 tomas@example.com (con perfil) y cliente 2 ana@example.com.
+
+### 1. [C-06] Venta válida con dos renglones
+# Viaja el id del cliente y los datos de cada renglón; no viajan precio, total ni fecha.
+# Esperado: 201 Created, "total": "80000.00", cliente 2 y renglones con precio copiado:
+#   libro 2 x2 a "25000.00" (subtotal "50000.00") y libro 1 x1 a "30000.00" (subtotal "30000.00")
+# En el log del servidor, después de la línea "POST /ventas/ 201":
+#   "Comprobante de la venta 1 enviado a ana@example.com" (BackgroundTasks, 0.5 s después)
+POST {{host}}/ventas/
+Content-Type: application/json
+
+{
+  "cliente_id": 2,
+  "renglones": [
+    { "libro_id": 2, "cantidad": 2 },
+    { "libro_id": 1, "cantidad": 1 }
+  ]
+}
+
+###
+
+### 2. Precio y total enviados por el cliente se ignoran (RN-06, RN-07)
+# Esperado: 201 Created con "total": "25000.00" y "precio_unitario": "25000.00"
+POST {{host}}/ventas/
+Content-Type: application/json
+
+{
+  "cliente_id": 1,
+  "total": "1.00",
+  "renglones": [{ "libro_id": 2, "cantidad": 1, "precio_unitario": "1.00" }]
+}
+
+###
+
+### 3. Sin renglones (RN-05)
+# Esperado: 422 Unprocessable Entity
+POST {{host}}/ventas/
+Content-Type: application/json
+
+{"cliente_id": 1, "renglones": []}
+
+###
+
+### 4. Libro repetido en dos renglones (RN-05)
+# Esperado: 422 Unprocessable Entity
+POST {{host}}/ventas/
+Content-Type: application/json
+
+{
+  "cliente_id": 1,
+  "renglones": [
+    { "libro_id": 1, "cantidad": 1 },
+    { "libro_id": 1, "cantidad": 2 }
+  ]
+}
+
+###
+
+### 5. Cantidad no positiva
+# Esperado: 422 Unprocessable Entity
+POST {{host}}/ventas/
+Content-Type: application/json
+
+{"cliente_id": 1, "renglones": [{ "libro_id": 1, "cantidad": 0 }]}
+
+###
+
+### 6. [C-05] Cliente inexistente
+# Esperado: 409 Conflict con mensaje propio; no se crea la venta ni sus renglones
+POST {{host}}/ventas/
+Content-Type: application/json
+
+{"cliente_id": 999, "renglones": [{ "libro_id": 1, "cantidad": 1 }]}
+
+###
+
+### 7. [C-05] Libro inexistente
+# Esperado: 409 Conflict {"detail": "Alguno de los libros indicados no existe"}
+POST {{host}}/ventas/
+Content-Type: application/json
+
+{"cliente_id": 1, "renglones": [{ "libro_id": 999, "cantidad": 1 }]}
+
+###
+
+### 8. [C-07] Detalle de la venta (cliente y renglones en una cantidad fija de consultas)
+# Esperado: 200 OK. Con SQL_ECHO=true: 1 SELECT venta JOIN cliente + 1 SELECT renglones JOIN libro ... IN
+GET {{host}}/ventas/1
+
+###
+
+### 9. Detalle inexistente
+# Esperado: 404 Not Found {"detail": "Venta no encontrada"}
+GET {{host}}/ventas/999
+
+###
+
+### 10. Listado paginado
+# Esperado: 200 OK con las ventas 1 y 2, cada una con cliente y renglones
+GET {{host}}/ventas/?limit=20&offset=0
+
+###
+
+### 11. Paginación inválida (RN-10)
+# Esperado: 422 Unprocessable Entity
+GET {{host}}/ventas/?limit=101
+
+###
+
+### 12. El precio de la venta no cambia si cambia el del libro (RN-06)
+# Esperado: 200 OK (el libro 2 pasa a 99999.00)
+PATCH {{host}}/libros/2
+Content-Type: application/json
+
+{"precio": "99999.00"}
+
+###
+
+### 13. La venta 1 conserva sus precios
+# Esperado: 200 OK con "total": "80000.00" y el libro 2 a "25000.00"
+GET {{host}}/ventas/1
+
+###
+
+### 14. Ventas de un cliente
+# Esperado: 200 OK con la venta 1 (cliente 2)
+GET {{host}}/clientes/2/ventas
+
+###
+
+### 15. Ventas de un cliente inexistente
+# Esperado: 404 Not Found
+GET {{host}}/clientes/999/ventas
+
+###
+
+### 16. Inmutabilidad (RN-08): no hay PATCH
+# Esperado: 405 Method Not Allowed
+PATCH {{host}}/ventas/1
+Content-Type: application/json
+
+{"total": "1.00"}
+
+###
+
+### 17. Inmutabilidad (RN-08): no hay PUT
+# Esperado: 405 Method Not Allowed
+PUT {{host}}/ventas/1
+Content-Type: application/json
+
+{"cliente_id": 1, "renglones": [{ "libro_id": 1, "cantidad": 1 }]}
+
+###
+
+### 18. Inmutabilidad (RN-08): no hay DELETE
+# Esperado: 405 Method Not Allowed
+DELETE {{host}}/ventas/1

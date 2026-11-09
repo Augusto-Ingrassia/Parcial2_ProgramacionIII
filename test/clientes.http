@@ -1,0 +1,125 @@
+### Variable de host base
+@host = http://127.0.0.1:8000
+
+# Precondición: sin clientes cargados (los ids 1 y 2 los crean las peticiones 1 y 2).
+
+### 1. Alta exitosa (el email se guarda en minúsculas)
+# Esperado: 201 Created {"id": 1, "nombre": "Tomás Ríos", "email": "tomas@example.com", "perfil": null}
+POST {{host}}/clientes/
+Content-Type: application/json
+
+{"nombre": "Tomás Ríos", "email": "Tomas@Example.com"}
+
+###
+
+### 2. Segundo cliente
+# Esperado: 201 Created
+POST {{host}}/clientes/
+Content-Type: application/json
+
+{"nombre": "Ana Gómez", "email": "ana@example.com"}
+
+###
+
+### 3. [C-02] Email repetido (RN-02)
+# Esperado: 409 Conflict {"detail": "Ya existe un cliente con ese email"}
+POST {{host}}/clientes/
+Content-Type: application/json
+
+{"nombre": "Otro Tomás", "email": "tomas@example.com"}
+
+###
+
+### 4. Alta inválida (email sin @)
+# Esperado: 422 Unprocessable Entity
+POST {{host}}/clientes/
+Content-Type: application/json
+
+{"nombre": "Sin Email", "email": "no-es-un-email"}
+
+###
+
+### 5. Alta de perfil (uno a uno)
+# Esperado: 201 Created {"id": <int>, "cliente_id": 1, "telefono": "11-5555-0000", "direccion": "Av. Siempre Viva 742"}
+POST {{host}}/clientes/1/perfil
+Content-Type: application/json
+
+{"telefono": "11-5555-0000", "direccion": "Av. Siempre Viva 742"}
+
+###
+
+### 6. [C-03] Segundo perfil para el mismo cliente (RN-09)
+# Esperado: 409 Conflict {"detail": "El cliente ya tiene un perfil"}
+POST {{host}}/clientes/1/perfil
+Content-Type: application/json
+
+{"telefono": "11-0000-0000", "direccion": "Otra dirección"}
+
+###
+
+### 7. Perfil para un cliente inexistente
+# Esperado: 404 Not Found {"detail": "Cliente no encontrado"}
+POST {{host}}/clientes/999/perfil
+Content-Type: application/json
+
+{"telefono": "11-0000-0000", "direccion": "Calle Falsa 123"}
+
+###
+
+### 8. Cliente con su perfil (objeto, no lista)
+# Esperado: 200 OK con "perfil": {"id": ..., "cliente_id": 1, ...}
+GET {{host}}/clientes/1
+
+###
+
+### 9. Cliente sin perfil
+# Esperado: 200 OK con "perfil": null
+GET {{host}}/clientes/2
+
+###
+
+### 10. Cliente inexistente
+# Esperado: 404 Not Found
+GET {{host}}/clientes/999
+
+###
+
+### 11. Listado paginado
+# Esperado: 200 OK, ordenado por id, cada uno con su perfil o null
+GET {{host}}/clientes/?limit=20&offset=0
+
+###
+
+### 12. PATCH parcial
+# Esperado: 200 OK con el nuevo nombre; email y perfil sin cambios
+PATCH {{host}}/clientes/1
+Content-Type: application/json
+
+{"nombre": "Tomás R."}
+
+###
+
+### 13. PATCH con email de otro cliente
+# Esperado: 409 Conflict; el cliente 2 conserva su email
+PATCH {{host}}/clientes/2
+Content-Type: application/json
+
+{"email": "tomas@example.com"}
+
+###
+
+### 14. PATCH con null explícito
+# Esperado: 422 Unprocessable Entity
+PATCH {{host}}/clientes/1
+Content-Type: application/json
+
+{"email": null}
+
+###
+
+### 15. PATCH inexistente
+# Esperado: 404 Not Found
+PATCH {{host}}/clientes/999
+Content-Type: application/json
+
+{"nombre": "Nadie"}
