@@ -1,0 +1,12 @@
+# D-06 — Usuario del proceso (2026-11-10 23:11 UTC)
+
+$ docker exec libreria id
+uid=100(appuser) gid=101(appuser) groups=101(appuser)
+[exit 0]
+
+$ docker exec libreria ps -o user,pid,args
+USER     PID   COMMAND
+appuser      1 {uvicorn} /usr/local/bin/python3.12 /usr/local/bin/uvicorn app.main:app --host 0.0.0.0 --port 8000
+appuser     40 ps -o user,pid,args
+[exit 0]
+

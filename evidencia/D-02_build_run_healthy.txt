@@ -1,0 +1,41 @@
+# D-02 — docker build + docker run, estado healthy y arranque (2026-11-10 23:10 UTC)
+
+# (build: ver D-01_imagenes.txt — docker build -t libreria:latest -t libreria:20261110 .)
+
+$ docker run -d --name libreria --network libreria-net -p 8001:8000 --restart unless-stopped --env-file .env.prod libreria
+446656e7d3113d8275efad6c621015d7f0998ced1fb4eebc6b177ca07974bc15
+[exit 0]
+
+$ docker ps --filter name=^/libreria$ --format "table {{.Names}}\t{{.Image}}\t{{.Status}}\t{{.Ports}}"
+NAMES      IMAGE      STATUS                   PORTS
+libreria   libreria   Up 6 seconds (healthy)   0.0.0.0:8001->8000/tcp, [::]:8001->8000/tcp
+[exit 0]
+
+$ docker inspect --format "{{.State.Health.Status}}" libreria
+healthy
+[exit 0]
+
+$ docker logs libreria
+INFO:     Started server process [1]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+INFO:     Uvicorn running on http://0.0.0.0:8000 (Press CTRL+C to quit)
+INFO:     127.0.0.1:49788 - "GET /health/ready HTTP/1.1" 200 OK
+[exit 0]
+
+$ docker exec libreria-db sh -c 'psql -U "$POSTGRES_USER" -d "$POSTGRES_DB" -c "\dt"'   # tablas creadas por create_all
+             List of relations
+ Schema |      Name      | Type  |  Owner   
+--------+----------------+-------+----------
+ public | autor          | table | <owner>
+ public | cliente        | table | <owner>
+ public | editorial      | table | <owner>
+ public | genero         | table | <owner>
+ public | libro          | table | <owner>
+ public | libro_autor    | table | <owner>
+ public | perfil_cliente | table | <owner>
+ public | renglon_venta  | table | <owner>
+ public | venta          | table | <owner>
+(9 rows)
+
+[exit 0]

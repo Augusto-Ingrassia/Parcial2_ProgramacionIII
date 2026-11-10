@@ -1,0 +1,38 @@
+# D-03 — Pruebas desde fuera del VPS contra la URL pública (2026-11-10 23:11 UTC)
+
+## Carga de datos iniciales dentro del contenedor (en el VPS)
+$ docker exec libreria python -m app.initial_data
+Carga inicial completada. Filas creadas:
+  editoriales: 0
+  generos: 0
+  autores: 0
+  libros: 0
+  autorias: 0
+  clientes: 0
+  perfiles: 0
+[exit 0]
+
+## Desde una máquina externa (Windows, red domiciliaria)
+$ curl -i http://elgrupo3.tech:8001/health/ready
+HTTP/1.1 200 OK
+content-length: 41
+content-type: application/json
+
+{"estado":"listo","database":"conectada"}
+
+
+$ curl -i http://elgrupo3.tech:8001/libros/
+HTTP/1.1 200 OK
+content-length: 1134
+content-type: application/json
+
+[{"id":1,"isbn":"978-950-00-0001-1","titulo":"Rayuela","precio":"25000.00","stock":20,"editorial":{"id":1,"nombre":"Sudamericana","pais":"Argentina"},"genero":{"id":1,"nombre":"Novela"}},{"id":2,"isbn":"978-950-00-0002-8","titulo":"Ficciones","precio":"18000.00","stock":30,"editorial":{"id":2,"nombre":"Emecé","pais":"Argentina"},"genero":{"id":2,"nombre":"Cuento"}},{"id":3,"isbn":"978-950-00-0003-5","titulo":"Los que aman, odian","precio":"21000.00","stock":15,"editorial":{"id":2,"nombre":"Emecé","pais":"Argentina"},"genero":{"id":1,"nombre":"Novela"}},{"id":4,"isbn":"978-950-00-0004-2","titulo":"Cuentos de Poe","precio":"27000.00","stock":12,"editorial":{"id":3,"nombre":"Anagrama","pais":"España"},"genero":{"id":2,"nombre":"Cuento"}},{"id":5,"isbn":"978-950-00-0005-9","titulo":"Antología de la literatura fantástica","precio":"32000.00","stock":8,"editorial":{"id":1,"nombre":"Sudamericana","pais":"Argentina"},"genero":null},{"id":6,"isbn":"978-950-00-0006-6","titulo":"El otro, el mismo","precio":"15000.00","stock":25,"editorial":{"id":2,"nombre":"Emecé","pais":"Argentina"},"genero":{"id":3,"nombre":"Poesía"}}]
+
+
+$ curl -i -X POST http://elgrupo3.tech:8001/ventas/ -H 'Content-Type: application/json' -d '{"cliente_id": 2, "renglones": [{"libro_id": 1, "cantidad": 2}, {"libro_id": 4, "cantidad": 1}]}'
+HTTP/1.1 201 Created
+content-length: 349
+content-type: application/json
+
+{"id":1,"fecha":"2026-11-10T23:11:10.742043Z","total":"77000.00","cliente":{"id":2,"nombre":"Ana Gómez","email":"ana@example.com"},"renglones":[{"libro_id":1,"titulo":"Rayuela","cantidad":2,"precio_unitario":"25000.00","subtotal":"50000.00"},{"libro_id":4,"titulo":"Cuentos de Poe","cantidad":1,"precio_unitario":"27000.00","subtotal":"27000.00"}]}
+

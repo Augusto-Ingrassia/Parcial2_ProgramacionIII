@@ -1,0 +1,9 @@
+# D-07 — Aviso del comprobante en segundo plano (2026-11-10 23:11 UTC)
+
+# La línea POST /ventas/ 201 (respuesta enviada) aparece ANTES que el aviso del comprobante.
+
+$ docker logs libreria 2>&1 | grep -E 'POST /ventas/|Comprobante'
+INFO:     <ip-cliente> - "POST /ventas/ HTTP/1.1" 201 Created
+INFO:     Comprobante de la venta 1 enviado a ana@example.com
+[exit 0]
+

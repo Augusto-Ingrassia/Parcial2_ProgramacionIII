@@ -1,0 +1,52 @@
+# D-01 — Imagen base y del proyecto (VPS srv1920450, 2026-11-10 23:09 UTC)
+
+$ docker pull python:3.12-alpine
+3.12-alpine: Pulling from library/python
+Digest: sha256:e064671ca452259bab50e8e2c7bd896e39e9a343bb06ca25234adf6fe18d0fc7
+Status: Downloaded newer image for python:3.12-alpine
+docker.io/library/python:3.12-alpine
+[exit 0]
+
+$ docker build -t libreria:latest -t libreria:20261110 . 2>&1 | tail -15
+#11 exporting to image
+#11 exporting layers
+#11 exporting layers 4.7s done
+#11 exporting manifest sha256:38beaa2a0cdf4203f63021a16d9b964de776d2754ecf20c93d8bf2c33cedb13f
+#11 exporting manifest sha256:38beaa2a0cdf4203f63021a16d9b964de776d2754ecf20c93d8bf2c33cedb13f 0.1s done
+#11 exporting config sha256:cb433d7e26ebb068aa0a285400c0cb0d989d9e4fdf6a71f070cfd2b5c6d7c8e5 0.0s done
+#11 exporting attestation manifest sha256:db29f2066d93b30edeff1b91c956c39f27a9826a19dfe786c8a6c2c7ac72df49
+#11 exporting attestation manifest sha256:db29f2066d93b30edeff1b91c956c39f27a9826a19dfe786c8a6c2c7ac72df49 0.0s done
+#11 exporting manifest list sha256:e6885876070f58a43abecc131fc5c177a3f3a797cfc93877363f9eabf490210e 0.0s done
+#11 naming to docker.io/library/libreria:latest done
+#11 unpacking to docker.io/library/libreria:latest
+#11 unpacking to docker.io/library/libreria:latest 3.1s done
+#11 naming to docker.io/library/libreria:20261110 done
+#11 unpacking to docker.io/library/libreria:20261110 0.0s done
+#11 DONE 8.1s
+[exit 0]
+
+$ docker images python:3.12-alpine
+IMAGE                ID             DISK USAGE   CONTENT SIZE   EXTRA
+python:3.12-alpine   e064671ca452       74.8MB         18.7MB        
+[exit 0]
+
+$ docker images libreria
+IMAGE               ID             DISK USAGE   CONTENT SIZE   EXTRA
+libreria:19ccaeb    e194ec092b1e        187MB         45.2MB   U    
+libreria:20261110   e6885876070f        187MB         45.2MB        
+libreria:latest     e6885876070f        187MB         45.2MB        
+[exit 0]
+
+$ docker image inspect python:3.12-alpine --format "{{.Size}} bytes"
+18062755 bytes
+[exit 0]
+
+$ head -2 Dockerfile
+# Imagen de ejecución de la API Librería (una sola etapa, sólo wheels binarios).
+FROM python:3.12-alpine
+[exit 0]
+
+$ docker image inspect libreria:latest --format "Usuario: {{.Config.User}}"
+Usuario: appuser
+[exit 0]
+

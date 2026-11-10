@@ -1,0 +1,32 @@
+# D-04 — docker rm -f y el mismo docker run: vuelve a healthy y los datos siguen (2026-11-10 23:11 UTC)
+
+$ wget -qO- http://127.0.0.1:8001/ventas/; echo
+[{"id":1,"fecha":"2026-11-10T23:11:10.742043Z","total":"77000.00","cliente":{"id":2,"nombre":"Ana Gómez","email":"ana@example.com"},"renglones":[{"libro_id":1,"titulo":"Rayuela","cantidad":2,"precio_unitario":"25000.00","subtotal":"50000.00"},{"libro_id":4,"titulo":"Cuentos de Poe","cantidad":1,"precio_unitario":"27000.00","subtotal":"27000.00"}]}]
+[exit 0]
+
+$ docker rm -f libreria
+libreria
+[exit 0]
+
+$ docker run -d --name libreria --network libreria-net -p 8001:8000 --restart unless-stopped --env-file .env.prod libreria
+c4c746e14b44e2ab1c183b5635c6033393cb16d00eb60334ac621dd63e91da8b
+[exit 0]
+
+$ docker ps --filter name=^/libreria$ --format 'table {{.Names}}	{{.Image}}	{{.Status}}	{{.Ports}}'
+NAMES      IMAGE      STATUS                   PORTS
+libreria   libreria   Up 6 seconds (healthy)   0.0.0.0:8001->8000/tcp, [::]:8001->8000/tcp
+[exit 0]
+
+$ wget -qO- http://127.0.0.1:8001/ventas/; echo
+[{"id":1,"fecha":"2026-11-10T23:11:10.742043Z","total":"77000.00","cliente":{"id":2,"nombre":"Ana Gómez","email":"ana@example.com"},"renglones":[{"libro_id":1,"titulo":"Rayuela","cantidad":2,"precio_unitario":"25000.00","subtotal":"50000.00"},{"libro_id":4,"titulo":"Cuentos de Poe","cantidad":1,"precio_unitario":"27000.00","subtotal":"27000.00"}]}]
+[exit 0]
+
+$ docker logs libreria
+INFO:     Started server process [1]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+INFO:     Uvicorn running on http://0.0.0.0:8000 (Press CTRL+C to quit)
+INFO:     <ip-cliente> - "GET /health/ready HTTP/1.1" 200 OK
+INFO:     <ip-cliente> - "GET /ventas/ HTTP/1.1" 200 OK
+[exit 0]
+
