@@ -1,7 +1,13 @@
+import logging
+
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlmodel import text
 from app.core.database import get_session
+
+MSG_BD_NO_DISPONIBLE = "Base de datos no disponible"
+
+logger = logging.getLogger("uvicorn.error")
 
 router = APIRouter(prefix="/health", tags=["Salud y Diagnóstico"])
 
@@ -29,13 +35,16 @@ async def health_ready(
         if scalar != 1:
             raise HTTPException(
                 status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-                detail="Respuesta inesperada de la base de datos",
+                detail=MSG_BD_NO_DISPONIBLE,
             )
         return {"estado": "listo", "database": "conectada"}
     except HTTPException:
         raise
-    except Exception as exc:
+    except Exception:
+        # No se registra ni se devuelve la excepción original: puede contener
+        # host, usuario o la URL completa de la base (RN-12).
+        logger.warning("Readiness: la base de datos no respondió a SELECT 1")
         raise HTTPException(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-            detail=f"Base de datos no disponible: {str(exc)}",
-        ) from exc
+            detail=MSG_BD_NO_DISPONIBLE,
+        ) from None

@@ -2,7 +2,7 @@ from collections.abc import AsyncGenerator
 from functools import lru_cache
 from typing import Annotated
 
-from fastapi import Depends
+from fastapi import Depends, Request
 from sqlalchemy.ext.asyncio import (
     AsyncEngine,
     AsyncSession,
@@ -12,8 +12,8 @@ from sqlalchemy.ext.asyncio import (
 from app.core.config import get_settings
 
 
-@lru_cache
-def get_engine() -> AsyncEngine:
+def crear_motor() -> AsyncEngine:
+    """Motor nuevo y sin caché: lo crea y libera el lifespan de la app."""
     settings = get_settings()
     return create_async_engine(
         settings.DATABASE_URL,
@@ -22,9 +22,7 @@ def get_engine() -> AsyncEngine:
     )
 
 
-@lru_cache
-def get_session_factory() -> async_sessionmaker[AsyncSession]:
-    engine = get_engine()
+def crear_fabrica_sesiones(engine: AsyncEngine) -> async_sessionmaker[AsyncSession]:
     return async_sessionmaker(
         bind=engine,
         class_=AsyncSession,
@@ -32,9 +30,21 @@ def get_session_factory() -> async_sessionmaker[AsyncSession]:
     )
 
 
-async def get_session() -> AsyncGenerator[AsyncSession, None]:
-    session_factory = get_session_factory()
-    async with session_factory() as session:
+@lru_cache
+def get_engine() -> AsyncEngine:
+    """Singleton para scripts fuera de la app (initial_data, auditoría)."""
+    return crear_motor()
+
+
+@lru_cache
+def get_session_factory() -> async_sessionmaker[AsyncSession]:
+    """Singleton para scripts fuera de la app (initial_data, auditoría)."""
+    return crear_fabrica_sesiones(get_engine())
+
+
+async def get_session(request: Request) -> AsyncGenerator[AsyncSession, None]:
+    # La fábrica la crea el lifespan y vive en app.state; sin fallback global.
+    async with request.app.state.session_factory() as session:
         yield session
 
 

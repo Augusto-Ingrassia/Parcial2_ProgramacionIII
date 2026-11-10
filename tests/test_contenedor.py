@@ -196,7 +196,7 @@ def test_requirements_runtime_sin_dependencias_de_test():
     for prohibido in ("pytest", "pytest-asyncio", "httpx", "aiosqlite"):
         assert prohibido not in nombres
     for requerido in ("fastapi", "sqlmodel", "asyncpg", "uvicorn[standard]",
-                      "pydantic-settings", "greenlet"):
+                      "pydantic-settings", "greenlet", "python-dotenv"):
         assert requerido in nombres
 
 

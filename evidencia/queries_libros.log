@@ -1,26 +1,59 @@
 # Comando: python -m scripts.auditar_consultas --salida evidencia
 # Motor: postgresql (asyncpg)
-# Fecha: 2026-11-09 18:49 UTC
+# Fecha: 2026-11-10 23:12 UTC
 # SQL_ECHO=true; datos de volumen insertados en una transacción que se revierte.
 
 === GET /libros/?limit=1 ===
 SELECT libro.id, libro.isbn, libro.titulo, libro.precio, libro.stock, libro.editorial_id, libro.genero_id, editorial_1.id AS id_1, editorial_1.nombre, editorial_1.pais, genero_1.id AS id_2, genero_1.nombre AS nombre_1 
 FROM libro LEFT OUTER JOIN editorial AS editorial_1 ON editorial_1.id = libro.editorial_id LEFT OUTER JOIN genero AS genero_1 ON genero_1.id = libro.genero_id ORDER BY libro.id 
  LIMIT $1::INTEGER OFFSET $2::INTEGER
-[generated in 0.00054s] (1, 0)
+[generated in 0.00072s] (1, 0)
 --- sentencias: 1 ---
 
 === GET /libros/?limit=10 ===
 SELECT libro.id, libro.isbn, libro.titulo, libro.precio, libro.stock, libro.editorial_id, libro.genero_id, editorial_1.id AS id_1, editorial_1.nombre, editorial_1.pais, genero_1.id AS id_2, genero_1.nombre AS nombre_1 
 FROM libro LEFT OUTER JOIN editorial AS editorial_1 ON editorial_1.id = libro.editorial_id LEFT OUTER JOIN genero AS genero_1 ON genero_1.id = libro.genero_id ORDER BY libro.id 
  LIMIT $1::INTEGER OFFSET $2::INTEGER
-[cached since 0.007256s ago] (10, 0)
+[cached since 0.009929s ago] (10, 0)
 --- sentencias: 1 ---
 
 === GET /libros/?limit=50 ===
 SELECT libro.id, libro.isbn, libro.titulo, libro.precio, libro.stock, libro.editorial_id, libro.genero_id, editorial_1.id AS id_1, editorial_1.nombre, editorial_1.pais, genero_1.id AS id_2, genero_1.nombre AS nombre_1 
 FROM libro LEFT OUTER JOIN editorial AS editorial_1 ON editorial_1.id = libro.editorial_id LEFT OUTER JOIN genero AS genero_1 ON genero_1.id = libro.genero_id ORDER BY libro.id 
  LIMIT $1::INTEGER OFFSET $2::INTEGER
-[cached since 0.01188s ago] (50, 0)
+[cached since 0.01624s ago] (50, 0)
 --- sentencias: 1 ---
+
+=== GET /libros/1 (detalle, autores=1) ===
+SELECT libro.id, libro.isbn, libro.titulo, libro.precio, libro.stock, libro.editorial_id, libro.genero_id, editorial_1.id AS id_1, editorial_1.nombre, editorial_1.pais, genero_1.id AS id_2, genero_1.nombre AS nombre_1 
+FROM libro LEFT OUTER JOIN editorial AS editorial_1 ON editorial_1.id = libro.editorial_id LEFT OUTER JOIN genero AS genero_1 ON genero_1.id = libro.genero_id 
+WHERE libro.id = $1::INTEGER
+[generated in 0.00050s] (1,)
+SELECT libro_autor.libro_id, libro_autor.autor_id, libro_autor.rol, libro_autor.orden, autor_1.id, autor_1.nombre, autor_1.nacionalidad 
+FROM libro_autor LEFT OUTER JOIN autor AS autor_1 ON autor_1.id = libro_autor.autor_id 
+WHERE libro_autor.libro_id IN ($1::INTEGER)
+[generated in 0.00049s] (1,)
+--- sentencias: 2 ---
+
+=== GET /libros/2 (detalle, autores=10) ===
+SELECT libro.id, libro.isbn, libro.titulo, libro.precio, libro.stock, libro.editorial_id, libro.genero_id, editorial_1.id AS id_1, editorial_1.nombre, editorial_1.pais, genero_1.id AS id_2, genero_1.nombre AS nombre_1 
+FROM libro LEFT OUTER JOIN editorial AS editorial_1 ON editorial_1.id = libro.editorial_id LEFT OUTER JOIN genero AS genero_1 ON genero_1.id = libro.genero_id 
+WHERE libro.id = $1::INTEGER
+[cached since 0.01115s ago] (2,)
+SELECT libro_autor.libro_id, libro_autor.autor_id, libro_autor.rol, libro_autor.orden, autor_1.id, autor_1.nombre, autor_1.nacionalidad 
+FROM libro_autor LEFT OUTER JOIN autor AS autor_1 ON autor_1.id = libro_autor.autor_id 
+WHERE libro_autor.libro_id IN ($1::INTEGER)
+[cached since 0.007936s ago] (2,)
+--- sentencias: 2 ---
+
+=== GET /libros/3 (detalle, autores=50) ===
+SELECT libro.id, libro.isbn, libro.titulo, libro.precio, libro.stock, libro.editorial_id, libro.genero_id, editorial_1.id AS id_1, editorial_1.nombre, editorial_1.pais, genero_1.id AS id_2, genero_1.nombre AS nombre_1 
+FROM libro LEFT OUTER JOIN editorial AS editorial_1 ON editorial_1.id = libro.editorial_id LEFT OUTER JOIN genero AS genero_1 ON genero_1.id = libro.genero_id 
+WHERE libro.id = $1::INTEGER
+[cached since 0.01887s ago] (3,)
+SELECT libro_autor.libro_id, libro_autor.autor_id, libro_autor.rol, libro_autor.orden, autor_1.id, autor_1.nombre, autor_1.nacionalidad 
+FROM libro_autor LEFT OUTER JOIN autor AS autor_1 ON autor_1.id = libro_autor.autor_id 
+WHERE libro_autor.libro_id IN ($1::INTEGER)
+[cached since 0.01654s ago] (3,)
+--- sentencias: 2 ---
 

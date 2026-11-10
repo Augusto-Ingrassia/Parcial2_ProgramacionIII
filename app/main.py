@@ -3,7 +3,7 @@ from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from sqlmodel import SQLModel
-from app.core.database import get_engine
+from app.core.database import crear_fabrica_sesiones, crear_motor
 from app.core.exceptions import register_exception_handlers
 from app.modules.autores import models as _autores_models  # noqa: F401
 from app.modules.autores.router import router as autores_router
@@ -25,8 +25,9 @@ logger = logging.getLogger("uvicorn.error")
 @asynccontextmanager
 async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     # Inicialización del motor y recursos
-    engine = get_engine()
+    engine = crear_motor()
     app.state.engine = engine
+    app.state.session_factory = crear_fabrica_sesiones(engine)
     try:
         async with engine.begin() as conn:
             await conn.run_sync(SQLModel.metadata.create_all)

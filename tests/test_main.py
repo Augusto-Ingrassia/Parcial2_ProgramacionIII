@@ -65,7 +65,7 @@ def _motor_fallido(exc: Exception) -> MagicMock:
 @pytest.mark.asyncio
 async def test_lifespan_propaga_error_y_libera_motor(monkeypatch, caplog, exc):
     motor = _motor_fallido(exc)
-    monkeypatch.setattr(main_mod, "get_engine", lambda: motor)
+    monkeypatch.setattr(main_mod, "crear_motor", lambda: motor)
     with caplog.at_level(logging.ERROR), pytest.raises(type(exc)):
         async with main_mod.lifespan(FastAPI()):
             pytest.fail("no debe llegar al yield")  # pragma: no cover
@@ -81,12 +81,38 @@ async def test_lifespan_exitoso_crea_tablas_y_libera_motor(monkeypatch, tmp_path
     motor = create_async_engine(f"sqlite+aiosqlite:///{tmp_path / 'ls.db'}")
     dispose = AsyncMock(wraps=motor.dispose)
     espia = MagicMock(wraps=motor, dispose=dispose)
-    monkeypatch.setattr(main_mod, "get_engine", lambda: espia)
+    monkeypatch.setattr(main_mod, "crear_motor", lambda: espia)
     app_ = FastAPI()
     async with main_mod.lifespan(app_):
         assert app_.state.engine is espia
+        fabrica = app_.state.session_factory
+        assert fabrica.kw["bind"] is app_.state.engine
+        assert fabrica.kw["expire_on_commit"] is False
         async with espia.connect() as conn:
             tablas = await conn.run_sync(lambda c: set(inspect(c).get_table_names()))
         assert {"libro", "venta", "cliente"} <= tablas
         dispose.assert_not_awaited()
     dispose.assert_awaited_once()
+
+
+@pytest.mark.asyncio
+async def test_ruta_completa_lifespan_session_factory_get_session(monkeypatch, tmp_path):
+    from httpx import ASGITransport, AsyncClient
+
+    monkeypatch.setattr(
+        main_mod,
+        "crear_motor",
+        lambda: create_async_engine(f"sqlite+aiosqlite:///{tmp_path / 'int.db'}"),
+    )
+    assert main_mod.app.dependency_overrides == {}
+    async with main_mod.lifespan(main_mod.app):
+        async with AsyncClient(
+            transport=ASGITransport(app=main_mod.app), base_url="http://test"
+        ) as client:
+            ready = await client.get("/health/ready")
+            libros = await client.get("/libros/")
+    assert ready.status_code == 200
+    assert ready.json()["database"] == "conectada"
+    assert libros.status_code == 200
+    assert libros.json() == []
+    assert main_mod.app.dependency_overrides == {}

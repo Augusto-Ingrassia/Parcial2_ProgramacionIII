@@ -3,8 +3,9 @@
 Uso: `python -m scripts.auditar_consultas [--salida evidencia]`
 
 Inserta un volumen de datos dentro de una transacción externa, lista 1, 10 y 50
-libros y ventas a través de la API real, registra las sentencias que emite el
-motor y revierte la transacción: la base queda como estaba.
+libros y ventas y consulta el detalle de libros con 1, 10 y 50 autores y de
+ventas con 1, 10 y 50 renglones a través de la API real, registra las sentencias
+que emite el motor y revierte la transacción: la base queda como estaba.
 """
 
 import argparse
@@ -12,11 +13,12 @@ import asyncio
 import logging
 import os
 import sys
+from collections.abc import Callable
 from datetime import datetime, timezone
 from decimal import Decimal
 from pathlib import Path
 
-from httpx import ASGITransport, AsyncClient
+from httpx import ASGITransport, AsyncClient, Response
 from sqlalchemy import event
 from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession
 from sqlmodel import SQLModel
@@ -24,25 +26,34 @@ from sqlmodel import SQLModel
 from app.core.config import get_settings
 from app.core.database import get_engine, get_session, get_session_factory
 from app.main import app
+from app.modules.autores.models import Autor
 from app.modules.clientes.models import Cliente
 from app.modules.editoriales.models import Editorial
 from app.modules.generos.models import Genero
-from app.modules.libros.models import Libro
+from app.modules.libros.models import Libro, LibroAutor
 from app.modules.ventas.models import RenglonVenta, Venta
 
 TAMANIOS = (1, 10, 50)
 VOLUMEN = max(TAMANIOS)
+DETALLES = (1, 10, 50)  # autores por libro / renglones por venta en las consultas de detalle
 PRECIO = Decimal("10.50")
 LOGGER_SQL = "sqlalchemy.engine.Engine"
 COMANDO = "python -m scripts.auditar_consultas"
 
 
-async def _insertar_volumen(session: AsyncSession) -> None:
-    """50 libros y 50 ventas con 1 o 2 renglones; sólo `flush` (la transacción es externa)."""
+async def _insertar_volumen(session: AsyncSession) -> dict[str, dict[int, int]]:
+    """Datos de volumen; sólo `flush` (la transacción es externa).
+
+    50 libros, 50 ventas de 1 o 2 renglones, 3 libros con 1/10/50 autores y 3
+    ventas con 1/10/50 renglones. Devuelve los ids de estas últimas por tamaño.
+    """
     editorial = Editorial(nombre="Editorial Auditoria", pais="Argentina")
     genero = Genero(nombre="Genero Auditoria")
     cliente = Cliente(nombre="Cliente Auditoria", email="auditoria@example.com")
-    session.add_all([editorial, genero, cliente])
+    autores = [
+        Autor(nombre=f"Autor {i}", nacionalidad="Argentina") for i in range(max(DETALLES))
+    ]
+    session.add_all([editorial, genero, cliente, *autores])
     await session.flush()
     libros = [
         Libro(
@@ -57,16 +68,27 @@ async def _insertar_volumen(session: AsyncSession) -> None:
     ]
     session.add_all(libros)
     await session.flush()
-    for i in range(VOLUMEN):
-        renglones = 1 + i % 2
+    ids: dict[str, dict[int, int]] = {"libros": {}, "ventas": {}}
+    for libro, k in zip(libros, DETALLES):
+        ids["libros"][k] = libro.id
+        session.add_all(
+            LibroAutor(libro_id=libro.id, autor_id=a.id, rol="autor", orden=orden)
+            for orden, a in enumerate(autores[:k], start=1)
+        )
+    # Primero las 50 ventas del listado y luego las de detalle, para que el
+    # listado (más recientes primero o no) siga devolviendo exactamente `limit` filas.
+    for i, renglones in [(i, 1 + i % 2) for i in range(VOLUMEN)] + [(None, k) for k in DETALLES]:
         venta = Venta(cliente_id=cliente.id, total=PRECIO * renglones)
         session.add(venta)
         await session.flush()
+        if i is None:
+            ids["ventas"][renglones] = venta.id
         session.add_all(
             RenglonVenta(venta_id=venta.id, libro_id=lb.id, cantidad=1, precio_unitario=PRECIO)
             for lb in libros[:renglones]
         )
     await session.flush()
+    return ids
 
 
 async def auditar(
@@ -74,7 +96,8 @@ async def auditar(
 ) -> dict[str, dict[int, int]]:
     """Escribe `queries_libros.log` y `queries_ventas.log` en `destino`.
 
-    Devuelve la cantidad de sentencias por recurso y tamaño de página.
+    Devuelve la cantidad de sentencias por recurso y tamaño de página
+    (`libros`, `ventas`) y por tamaño de detalle (`detalle_libro`, `detalle_venta`).
     """
     destino.mkdir(parents=True, exist_ok=True)
     sentencias: list[str] = []
@@ -85,13 +108,18 @@ async def auditar(
     logger = logging.getLogger(LOGGER_SQL)
     nivel_previo = logger.level
     logger.setLevel(logging.INFO)  # la conexión toma el nivel al abrirse
-    conteos: dict[str, dict[int, int]] = {"libros": {}, "ventas": {}}
+    conteos: dict[str, dict[int, int]] = {
+        "libros": {},
+        "ventas": {},
+        "detalle_libro": {},
+        "detalle_venta": {},
+    }
     try:
         async with engine.connect() as conn:
             transaccion = await conn.begin()
             try:
                 async with AsyncSession(bind=conn, expire_on_commit=False) as sesion:
-                    await _insertar_volumen(sesion)
+                    ids = await _insertar_volumen(sesion)
 
                 async def _sesion_auditoria():
                     async with AsyncSession(bind=conn, expire_on_commit=False) as s:
@@ -103,14 +131,27 @@ async def auditar(
                     async with AsyncClient(
                         transport=ASGITransport(app=app), base_url="http://test"
                     ) as http:
-                        for recurso in ("libros", "ventas"):
+                        for recurso, clave, campo in (
+                            ("libros", "detalle_libro", "autores"),
+                            ("ventas", "detalle_venta", "renglones"),
+                        ):
                             ruta = destino / f"queries_{recurso}.log"
                             ruta.write_text(
                                 (encabezado + "\n" if encabezado else ""), encoding="utf-8"
                             )
                             for n in TAMANIOS:
                                 conteos[recurso][n] = await _medir(
-                                    http, logger, ruta, recurso, n, sentencias
+                                    http, logger, ruta, f"/{recurso}/?limit={n}",
+                                    f"/{recurso}/?limit={n}",
+                                    lambda r, n=n: len(r.json()) == n, sentencias,
+                                )
+                            for k in DETALLES:
+                                url = f"/{recurso}/{ids[recurso][k]}"
+                                conteos[clave][k] = await _medir(
+                                    http, logger, ruta, url,
+                                    f"{url} (detalle, {campo}={k})",
+                                    lambda r, k=k, campo=campo: len(r.json()[campo]) == k,
+                                    sentencias,
                                 )
                 finally:
                     event.remove(engine.sync_engine, "before_cursor_execute", _contar)
@@ -126,13 +167,13 @@ async def _medir(
     http: AsyncClient,
     logger: logging.Logger,
     ruta: Path,
-    recurso: str,
-    n: int,
+    url: str,
+    rotulo: str,
+    valida: Callable[[Response], bool],
     sentencias: list[str],
 ) -> int:
-    url = f"/{recurso}/?limit={n}"
     with ruta.open("a", encoding="utf-8") as f:
-        f.write(f"=== GET {url} ===\n")
+        f.write(f"=== GET {rotulo} ===\n")
     handler = logging.FileHandler(ruta, mode="a", encoding="utf-8")
     handler.setFormatter(logging.Formatter("%(message)s"))
     logger.addHandler(handler)
@@ -142,7 +183,7 @@ async def _medir(
     finally:
         logger.removeHandler(handler)
         handler.close()
-    if respuesta.status_code != 200 or len(respuesta.json()) != n:
+    if respuesta.status_code != 200 or not valida(respuesta):
         raise RuntimeError(f"Respuesta inesperada en {url}: {respuesta.status_code}")
     cantidad = len(sentencias)
     with ruta.open("a", encoding="utf-8") as f:
