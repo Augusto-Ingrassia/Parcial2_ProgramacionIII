@@ -1,0 +1,35 @@
+# Secretos y entornos locales
+.env
+.env.*
+!env.example
+.venv
+venv
+
+# Control de versiones y herramientas
+.git
+.gitignore
+.agents
+.claude
+.atl
+.engram
+
+# Cachés de Python y pruebas
+**/__pycache__
+**/*.py[cod]
+.pytest_cache
+.coverage
+htmlcov
+
+# Contenido que no es de ejecución
+evidencia/
+tests/
+test/
+scripts/
+docs/
+Discovery/
+knowledge-base/
+openspec/
+design-system/
+*.md
+Dockerfile
+.dockerignore

@@ -5,7 +5,6 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 
 class Settings(BaseSettings):
     DATABASE_URL: str = Field(
-        default="postgresql+asyncpg://postgres:postgres@127.0.0.1:5432/libreria_db",
         description="URL asincrónica de conexión a PostgreSQL",
     )
     SQL_ECHO: bool = Field(

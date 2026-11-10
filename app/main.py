@@ -1,3 +1,4 @@
+import logging
 from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager
 from fastapi import FastAPI
@@ -18,6 +19,8 @@ from app.modules.libros.router import router as libros_router
 from app.modules.ventas import models as _ventas_models  # noqa: F401
 from app.modules.ventas.router import router as ventas_router
 
+logger = logging.getLogger("uvicorn.error")
+
 
 @asynccontextmanager
 async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
@@ -27,9 +30,14 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     try:
         async with engine.begin() as conn:
             await conn.run_sync(SQLModel.metadata.create_all)
-    except Exception as exc:
-        # En caso de error de conexión en startup, registrar y continuar o dejar que health/ready falle
-        print(f"Advertencia: No se pudo conectar a la base de datos durante startup: {exc}")
+    except Exception:
+        # Fail-fast: sin base no se atiende ninguna petición. No se registra la
+        # excepción original porque puede contener la URL con credenciales.
+        logger.error(
+            "No se pudo conectar a la base de datos al iniciar; verifique DATABASE_URL"
+        )
+        await engine.dispose()
+        raise
 
     yield
 

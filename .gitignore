@@ -12,3 +12,6 @@ build/
 *.egg-info/
 .DS_Store
 .atl/
+
+# Secretos de despliegue (.env.prod, .env.test, ...); env.example sí se versiona
+.env.*

@@ -1,3 +1,8 @@
+import os
+
+# DATABASE_URL es obligatoria en la app; la suite usa SQLite en memoria por defecto.
+os.environ.setdefault("DATABASE_URL", "sqlite+aiosqlite:///:memory:")
+
 import pytest
 import pytest_asyncio
 from httpx import ASGITransport, AsyncClient
