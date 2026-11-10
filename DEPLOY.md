@@ -6,8 +6,8 @@
 |---|---|
 | URL pública | http://46.202.151.202:8001 |
 | Documentación interactiva | http://46.202.151.202:8001/docs |
-| Fecha y hora del despliegue | (TBD) — completar al desplegar; el reloj del servidor está en UTC |
-| Versión desplegada (commit / tag de imagen) | (TBD) |
+| Fecha y hora del despliegue | 2026-11-10 03:40 UTC (2026-11-10 00:40 hora de Argentina, UTC-3) |
+| Versión desplegada (commit / tag de imagen) | commit `19ccaeb` — imágenes `libreria:19ccaeb` y `libreria:latest` (187 MB) |
 | Servidor | VPS Ubuntu 24.04, arquitectura `x86_64`, Docker 29.7.1 |
 | Dominio del VPS | `elgrupo3.tech` (la API se publica por IP y puerto, sin proxy ni TLS) |
 
@@ -38,7 +38,15 @@ SQL_ECHO=false
 APP_PORT=8000
 ```
 
-Para crear el contenedor de PostgreSQL se usan las mismas credenciales (`<usuario>`, `<password>`, `<base>`) en `POSTGRES_USER`, `POSTGRES_PASSWORD` y `POSTGRES_DB`.
+Para crear el contenedor de PostgreSQL se usan las mismas credenciales en un segundo archivo `.env.db` (también fuera de git, permisos `600`), para que la contraseña no quede en el historial de la shell ni en `docker inspect` de la línea de comandos:
+
+```
+POSTGRES_USER=<usuario>
+POSTGRES_PASSWORD=<password>
+POSTGRES_DB=<base>
+```
+
+En el despliegue real ambos archivos se generaron en el VPS con una contraseña aleatoria (`openssl rand -hex 24`) creada en el propio servidor; no se escribió en ningún otro lugar.
 
 ## Despliegue inicial (en el VPS)
 
@@ -50,15 +58,14 @@ uname -m                                   # x86_64
 # 1. Código
 git clone <url-del-repositorio> libreria && cd libreria     # o: git pull
 
-# 2. Secretos (una sola vez): crear .env.prod y restringirlo
-chmod 600 .env.prod
+# 2. Secretos (una sola vez): crear .env.prod y .env.db y restringirlos
+chmod 600 .env.prod .env.db
 
 # 3. Red y base de datos (una sola vez)
 docker network create libreria-net
 docker volume create libreria-pgdata
 docker run -d --name libreria-db --network libreria-net \
-  --restart unless-stopped \
-  -e POSTGRES_USER=<usuario> -e POSTGRES_PASSWORD=<password> -e POSTGRES_DB=<base> \
+  --restart unless-stopped --env-file .env.db \
   -v libreria-pgdata:/var/lib/postgresql/data \
   postgres:16-alpine
 
@@ -136,6 +143,20 @@ docker logs --tail 50 libreria-db                        # lado PostgreSQL
 - `Restarting` en `docker ps`: la API no logra arrancar (arranque fail-fast); casi siempre `DATABASE_URL` incorrecta o `libreria-db` caído. El log muestra "No se pudo conectar a la base de datos al iniciar; verifique DATABASE_URL" o el error de configuración de `DATABASE_URL` ausente.
 - `unhealthy`: la API corre pero `/health/ready` falla (la base dejó de responder). Docker **no** reinicia el contenedor por estar `unhealthy`; revisar `libreria-db`.
 - La API y la base deben estar en la misma red: `docker network inspect libreria-net`.
+
+## Validación en el VPS (resultados del despliegue)
+
+Ejecutada el 2026-11-10 03:40 UTC sobre el commit `19ccaeb`, con el código copiado a `/root/libreria`.
+
+| Comprobación | Resultado |
+|---|---|
+| `docker build -t libreria .` en el VPS | Exitoso, imagen de 187 MB |
+| `docker inspect --format '{{.State.Health.Status}}' libreria` | `healthy` (a los ~10 s) |
+| `docker exec libreria id -un` | `appuser` |
+| `docker exec libreria python -m app.initial_data` | Código 0: 5 autores, 6 libros, 10 autorías, 2 clientes, 2 perfiles (más editoriales y géneros) |
+| `GET http://46.202.151.202:8001/health/live` desde fuera del VPS | 200 `{"estado":"vivo"}` |
+| `GET http://46.202.151.202:8001/health/ready` desde fuera del VPS | 200 |
+| `GET http://46.202.151.202:8001/libros/` desde fuera del VPS | 200 |
 
 ## Validación local (resultados)
 

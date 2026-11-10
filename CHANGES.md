@@ -259,7 +259,7 @@ Paso │ Agente A (Backend Core)       │ Agente B (Backend Aux)        │ Age
 ## FASE 5 — Contenedorización y Despliegue en Producción
 
 ### [C-07] `docker-alpine-y-despliegue-vps`
-- **Estado**: `[ ]` pendiente
+- **Estado**: `[x]` completado (archivado 2026-11-10)
 - **Scope**: Contenedorización segura en Alpine Linux, usuario no-root, variables desacopladas, despliegue en VPS y manual operativo
   - `Dockerfile` optimizado:
     - Imagen base oficial `python:3.12-alpine` (tamaño base < 100 MB).

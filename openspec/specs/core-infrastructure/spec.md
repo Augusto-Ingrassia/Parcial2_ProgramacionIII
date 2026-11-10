@@ -16,6 +16,10 @@ La aplicación SHALL inicializar el motor asincrónico y ejecutar la creación d
 - **WHEN** la aplicación FastAPI finaliza su ejecución
 - **THEN** se invoca `await app.state.engine.dispose()` cerrando todas las conexiones del pool.
 
+#### Scenario: Arranque con base de datos inaccesible
+- **WHEN** la aplicación inicia su ciclo de vida y no logra conectarse a la base de datos para crear las tablas
+- **THEN** el arranque se aborta (la aplicación no comienza a atender peticiones), se liberan los recursos del motor, se registra un mensaje propio de error que no incluye la URL de conexión ni credenciales, y el proceso termina con código distinto de cero.
+
 ### Requirement: Inyección de sesión asincrónica por petición
 El sistema SHALL proveer una sesión asincrónica de base de datos por cada petición HTTP con la opción `expire_on_commit=False`.
 
@@ -29,3 +33,7 @@ El sistema SHALL leer y validar la configuración del entorno mediante un modelo
 #### Scenario: Carga exitosa de configuración válida
 - **WHEN** la aplicación carga las variables desde el archivo `.env` o variables del sistema
 - **THEN** se validan los valores tipados de `DATABASE_URL` (cadena no vacía con driver asyncpg), `SQL_ECHO` (booleano) y `APP_PORT` (entero).
+
+#### Scenario: DATABASE_URL ausente
+- **WHEN** la configuración se carga sin `DATABASE_URL` en las variables de entorno ni en el archivo `.env`
+- **THEN** la validación falla con un error de configuración y la aplicación no arranca; no se usa ninguna URL ni credencial por defecto.

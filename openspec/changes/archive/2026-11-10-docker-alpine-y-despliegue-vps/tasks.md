@@ -37,13 +37,13 @@
 
 ## 6. Despliegue en el VPS
 
-- [ ] 6.1 **[MANUAL-VPS]** En el VPS: verificar `docker --version` y `uname -m`; clonar o actualizar el repositorio; crear `.env.prod` con permisos `600` según el escenario D6 confirmado; `docker build -t libreria .`; `docker run` con los flags de `DEPLOY.md`. Verificación: `docker ps` muestra `libreria` `healthy`.
-- [ ] 6.2 **[MANUAL-VPS]** `docker exec libreria python -m app.initial_data`; desde fuera del VPS: `GET <URL>/health/live`, `GET <URL>/health/ready` y `GET <URL>/libros/` → 200. Verificación: respuestas registradas.
-- [ ] 6.3 Completar en `DEPLOY.md` la URL pública, la fecha y hora con zona horaria y la versión desplegada, y en `README.md` los integrantes; eliminar todos los `(TBD)`. Verificación: `grep -n "TBD" DEPLOY.md README.md` sin resultados.
+- [x] 6.1 **[MANUAL-VPS]** En el VPS: verificar `docker --version` y `uname -m`; clonar o actualizar el repositorio; crear `.env.prod` con permisos `600` según el escenario D6 confirmado; `docker build -t libreria .`; `docker run` con los flags de `DEPLOY.md`. Verificación: `docker ps` muestra `libreria` `healthy`.
+- [x] 6.2 **[MANUAL-VPS]** `docker exec libreria python -m app.initial_data`; desde fuera del VPS: `GET <URL>/health/live`, `GET <URL>/health/ready` y `GET <URL>/libros/` → 200. Verificación: respuestas registradas.
+- [x] 6.3 Completar en `DEPLOY.md` la URL pública, la fecha y hora con zona horaria y la versión desplegada, y en `README.md` los integrantes; eliminar todos los `(TBD)`. Verificación: `grep -n "TBD" DEPLOY.md README.md` sin resultados.
 
 ## 7. Cierre
 
-- [ ] 7.1 Suite completa en verde (línea base + tests nuevos) con `requirements-dev.txt`. Revisión de reglas duras sobre los archivos nuevos/tocados: base `python:3.12-alpine`, `USER appuser`, sin secretos en capas ni en docs, `HEALTHCHECK` contra `127.0.0.1:8000`, nada bloqueante agregado al código. Verificación: salida de `pytest -q` y `grep -rn "localhost" Dockerfile` sin resultados.
+- [x] 7.1 Suite completa en verde (línea base + tests nuevos) con `requirements-dev.txt`. Revisión de reglas duras sobre los archivos nuevos/tocados: base `python:3.12-alpine`, `USER appuser`, sin secretos en capas ni en docs, `HEALTHCHECK` contra `127.0.0.1:8000`, nada bloqueante agregado al código. Verificación: salida de `pytest -q` y `grep -rn "localhost" Dockerfile` sin resultados.
 
 ## Workflow follow-up
 
