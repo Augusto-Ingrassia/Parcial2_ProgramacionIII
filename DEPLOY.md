@@ -4,8 +4,10 @@
 
 | Dato | Valor |
 |---|---|
-| URL pública | **http://elgrupo3.tech:8001** (equivalente por IP: http://46.202.151.202:8001) |
-| Documentación interactiva | http://elgrupo3.tech:8001/docs |
+| URL pública (Easypanel HTTPS) | **https://el-piso-es-laburo-3-libreria-api.sajp60.easypanel.host** |
+| Documentación interactiva (Easypanel) | https://el-piso-es-laburo-3-libreria-api.sajp60.easypanel.host/docs |
+| URL pública (contenedor directo `docker run`) | **http://elgrupo3.tech:8001** (equivalente por IP: http://46.202.151.202:8001) |
+| Documentación interactiva (`docker run`) | http://elgrupo3.tech:8001/docs |
 | Fecha y hora del despliegue vigente | 2026-11-10 23:10 UTC (2026-11-10 20:10 hora de Argentina, UTC-3) |
 | Versión desplegada (tag de imagen) | `libreria:20261110` = `libreria:latest` (187 MB), con el change `correcciones-pre-entrega` |
 | Despliegue anterior | 2026-11-10 03:40 UTC, commit `19ccaeb` (imagen `libreria:19ccaeb`, conservada para rollback) |
