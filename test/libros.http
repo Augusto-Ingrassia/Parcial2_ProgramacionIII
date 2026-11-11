@@ -1,5 +1,5 @@
 ### Variable de host base
-@host = http://127.0.0.1:8000
+@host = https://el-piso-es-laburo-3-libreria-api.sajp60.easypanel.host
 
 # Precondición: base vacía (sin seed de app.initial_data); las peticiones 0.x crean el catálogo mínimo:
 # editorial 1, géneros 1 y 2, autores 1 a 4.

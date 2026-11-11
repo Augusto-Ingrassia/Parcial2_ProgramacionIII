@@ -1,5 +1,5 @@
 ### Variable de host base
-@host = http://127.0.0.1:8000
+@host = https://el-piso-es-laburo-3-libreria-api.sajp60.easypanel.host
 
 # Precondicion: base vacia (sin seed de app.initial_data); el seed cambiaria los ids de estas peticiones.
 

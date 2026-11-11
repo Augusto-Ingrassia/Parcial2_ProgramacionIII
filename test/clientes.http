@@ -1,5 +1,5 @@
 ### Variable de host base
-@host = http://127.0.0.1:8000
+@host = https://el-piso-es-laburo-3-libreria-api.sajp60.easypanel.host
 
 # Precondición: base vacía (sin seed de app.initial_data); los ids 1 y 2 los crean las peticiones 1 y 2.
 # RN-12: el detail de los 409 es un mensaje propio, sin nombres de tablas ni restricciones.
