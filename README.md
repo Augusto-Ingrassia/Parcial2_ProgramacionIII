@@ -5,7 +5,7 @@ API REST asincrónica para la gestión de una librería: catálogo (editoriales,
 ## Integrantes
 
 - Lautaro Mejías
-- Augusto Ingrassia
+- Augusto Tello Ingrassia
 - Franco Squillo
 - Uriel Vega
 - Matheo Bazán
